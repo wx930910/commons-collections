@@ -16,6 +16,10 @@
  */
 package org.apache.commons.collections4.collection;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,102 +30,110 @@ import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.TransformerUtils;
 
 /**
- * Extension of {@link AbstractCollectionTest} for exercising the {@link TransformedCollection}
- * implementation.
+ * Extension of {@link AbstractCollectionTest} for exercising the
+ * {@link TransformedCollection} implementation.
  *
  * @since 3.0
  */
 public class TransformedCollectionTest extends AbstractCollectionTest<Object> {
 
-    private static class StringToInteger implements Transformer<Object, Object> {
-        @Override
-        public Object transform(final Object input) {
-            return Integer.valueOf((String) input);
-        }
-    }
+	public static Transformer<Object, Object> mockTransformer2() {
+		Transformer<Object, Object> mockInstance = mock(Transformer.class);
+		when(mockInstance.transform(any())).thenAnswer((stubInvo) -> {
+			Object input = stubInvo.getArgument(0);
+			return ((String) input).toLowerCase();
+		});
+		return mockInstance;
+	}
 
-    private static class ToLowerCase implements Transformer<Object, Object> {
-        @Override
-        public Object transform(final Object input) {
-            return ((String) input).toLowerCase();
-        }
-    }
+	public static Transformer<Object, Object> mockTransformer1() {
+		Transformer<Object, Object> mockInstance = mock(Transformer.class);
+		when(mockInstance.transform(any())).thenAnswer((stubInvo) -> {
+			Object input = stubInvo.getArgument(0);
+			return Integer.valueOf((String) input);
+		});
+		return mockInstance;
+	}
 
-    public static final Transformer<Object, Object> NOOP_TRANSFORMER = TransformerUtils.nopTransformer();
-    public static final Transformer<Object, Object> STRING_TO_INTEGER_TRANSFORMER = new StringToInteger();
-    public static final Transformer<Object, Object> TO_LOWER_CASE_TRANSFORMER = new ToLowerCase();
+	public static final Transformer<Object, Object> NOOP_TRANSFORMER = TransformerUtils.nopTransformer();
+	public static final Transformer<Object, Object> STRING_TO_INTEGER_TRANSFORMER = TransformedCollectionTest
+			.mockTransformer1();
+	public static final Transformer<Object, Object> TO_LOWER_CASE_TRANSFORMER = TransformedCollectionTest
+			.mockTransformer2();
 
-    public TransformedCollectionTest(final String testName) {
-        super(testName);
-    }
+	public TransformedCollectionTest(final String testName) {
+		super(testName);
+	}
 
-    //-----------------------------------------------------------------------
-    @Override
-    public Collection<Object> makeConfirmedCollection() {
-        return new ArrayList<>();
-    }
+	// -----------------------------------------------------------------------
+	@Override
+	public Collection<Object> makeConfirmedCollection() {
+		return new ArrayList<>();
+	}
 
-    @Override
-    public Collection<Object> makeConfirmedFullCollection() {
-        return new ArrayList<>(Arrays.asList(getFullElements()));
-    }
+	@Override
+	public Collection<Object> makeConfirmedFullCollection() {
+		return new ArrayList<>(Arrays.asList(getFullElements()));
+	}
 
-    @Override
-    public Collection<Object> makeObject() {
-        return TransformedCollection.transformingCollection(new ArrayList<>(), NOOP_TRANSFORMER);
-    }
+	@Override
+	public Collection<Object> makeObject() {
+		return TransformedCollection.transformingCollection(new ArrayList<>(), NOOP_TRANSFORMER);
+	}
 
-    @Override
-    public Collection<Object> makeFullCollection() {
-        final List<Object> list = new ArrayList<>(Arrays.asList(getFullElements()));
-        return TransformedCollection.transformingCollection(list, NOOP_TRANSFORMER);
-    }
+	@Override
+	public Collection<Object> makeFullCollection() {
+		final List<Object> list = new ArrayList<>(Arrays.asList(getFullElements()));
+		return TransformedCollection.transformingCollection(list, NOOP_TRANSFORMER);
+	}
 
-    //-----------------------------------------------------------------------
-    @Override
-    public Object[] getFullElements() {
-        return new Object[] {"1", "3", "5", "7", "2", "4", "6"};
-    }
+	// -----------------------------------------------------------------------
+	@Override
+	public Object[] getFullElements() {
+		return new Object[] { "1", "3", "5", "7", "2", "4", "6" };
+	}
 
-    @Override
-    public Object[] getOtherElements() {
-        return new Object[] {"9", "88", "678", "87", "98", "78", "99"};
-    }
+	@Override
+	public Object[] getOtherElements() {
+		return new Object[] { "9", "88", "678", "87", "98", "78", "99" };
+	}
 
-    //-----------------------------------------------------------------------
-    public void testTransformedCollection() {
-        final Collection<Object> coll = TransformedCollection.transformingCollection(new ArrayList<>(), STRING_TO_INTEGER_TRANSFORMER);
-        assertEquals(0, coll.size());
-        final Object[] elements = getFullElements();
-        for (int i = 0; i < elements.length; i++) {
-            coll.add(elements[i]);
-            assertEquals(i + 1, coll.size());
-            assertTrue(coll.contains(Integer.valueOf((String) elements[i])));
-            assertFalse(coll.contains(elements[i]));
-        }
+	// -----------------------------------------------------------------------
+	public void testTransformedCollection() {
+		final Collection<Object> coll = TransformedCollection.transformingCollection(new ArrayList<>(),
+				STRING_TO_INTEGER_TRANSFORMER);
+		assertEquals(0, coll.size());
+		final Object[] elements = getFullElements();
+		for (int i = 0; i < elements.length; i++) {
+			coll.add(elements[i]);
+			assertEquals(i + 1, coll.size());
+			assertTrue(coll.contains(Integer.valueOf((String) elements[i])));
+			assertFalse(coll.contains(elements[i]));
+		}
 
-        assertTrue(coll.remove(Integer.valueOf((String) elements[0])));
-    }
+		assertTrue(coll.remove(Integer.valueOf((String) elements[0])));
+	}
 
-    public void testTransformedCollection_decorateTransform() {
-        final Collection<Object> originalCollection = new ArrayList<>();
-        final Object[] elements = getFullElements();
-        Collections.addAll(originalCollection, elements);
-        final Collection<Object> collection = TransformedCollection.transformedCollection(originalCollection, TransformedCollectionTest.STRING_TO_INTEGER_TRANSFORMER);
-        assertEquals(elements.length, collection.size());
-        for (final Object element : elements) {
-            assertTrue(collection.contains(Integer.valueOf((String) element)));
-            assertFalse(collection.contains(element));
-        }
+	public void testTransformedCollection_decorateTransform() {
+		final Collection<Object> originalCollection = new ArrayList<>();
+		final Object[] elements = getFullElements();
+		Collections.addAll(originalCollection, elements);
+		final Collection<Object> collection = TransformedCollection.transformedCollection(originalCollection,
+				TransformedCollectionTest.STRING_TO_INTEGER_TRANSFORMER);
+		assertEquals(elements.length, collection.size());
+		for (final Object element : elements) {
+			assertTrue(collection.contains(Integer.valueOf((String) element)));
+			assertFalse(collection.contains(element));
+		}
 
-        assertFalse(collection.remove(elements[0]));
-        assertTrue(collection.remove(Integer.valueOf((String) elements[0])));
-    }
+		assertFalse(collection.remove(elements[0]));
+		assertTrue(collection.remove(Integer.valueOf((String) elements[0])));
+	}
 
-    @Override
-    public String getCompatibilityVersion() {
-        return "4";
-    }
+	@Override
+	public String getCompatibilityVersion() {
+		return "4";
+	}
 
 //    public void testCreate() throws Exception {
 //        resetEmpty();

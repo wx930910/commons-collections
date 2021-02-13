@@ -16,47 +16,40 @@
  */
 package org.apache.commons.collections4.bloomfilter;
 
-import org.apache.commons.collections4.bloomfilter.hasher.HashFunctionIdentity;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+
 import org.apache.commons.collections4.bloomfilter.hasher.Hasher;
 import org.apache.commons.collections4.bloomfilter.hasher.Shape;
 
-import java.util.Arrays;
-import java.util.PrimitiveIterator.OfInt;
-
 /**
- * A Hasher implementation to return fixed indexes. Duplicates are allowed.
- * The shape is ignored when generating the indexes.
+ * A Hasher implementation to return fixed indexes. Duplicates are allowed. The
+ * shape is ignored when generating the indexes.
  *
- * <p><strong>This is not a real hasher and is used for testing only</strong>.
+ * <p>
+ * <strong>This is not a real hasher and is used for testing only</strong>.
  */
-class FixedIndexesTestHasher implements Hasher {
-    /** The shape. */
-    private final Shape shape;
-    /** The indexes. */
-    private final int[] indexes;
-
-    /**
-     * Create an instance.
-     *
-     * @param shape the shape
-     * @param indexes the indexes
-     */
-    FixedIndexesTestHasher(final Shape shape, final int... indexes) {
-        this.shape = shape;
-        this.indexes = indexes;
-    }
-
-    @Override
-    public OfInt iterator(final Shape shape) {
-        if (!this.shape.equals(shape)) {
-            throw new IllegalArgumentException(
-                String.format("shape (%s) does not match internal shape (%s)", shape, this.shape));
-        }
-        return Arrays.stream(indexes).iterator();
-    }
-
-    @Override
-    public HashFunctionIdentity getHashFunctionIdentity() {
-        return shape.getHashFunctionIdentity();
-    }
+class FixedIndexesTestHasher {
+	public static Hasher mockHasher1(final Shape shape, final int... indexes) {
+		Shape mockFieldVariableShape;
+		int[] mockFieldVariableIndexes;
+		Hasher mockInstance = mock(Hasher.class);
+		mockFieldVariableShape = shape;
+		mockFieldVariableIndexes = indexes;
+		when(mockInstance.getHashFunctionIdentity()).thenAnswer((stubInvo) -> {
+			return mockFieldVariableShape.getHashFunctionIdentity();
+		});
+		when(mockInstance.iterator(any())).thenAnswer((stubInvo) -> {
+			Shape shapeMockVariable = stubInvo.getArgument(0);
+			if (!mockFieldVariableShape.equals(shapeMockVariable)) {
+				throw new IllegalArgumentException(String.format("shape (%s) does not match internal shape (%s)",
+						shapeMockVariable, mockFieldVariableShape));
+			}
+			return Arrays.stream(mockFieldVariableIndexes).iterator();
+		});
+		return mockInstance;
+	}
 }
