@@ -16,83 +16,87 @@
  */
 package org.apache.commons.collections4.bloomfilter;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.withSettings;
+
 import java.util.BitSet;
 import java.util.function.IntConsumer;
 
 import org.apache.commons.collections4.bloomfilter.hasher.Hasher;
 import org.apache.commons.collections4.bloomfilter.hasher.Shape;
 import org.apache.commons.collections4.bloomfilter.hasher.StaticHasher;
+import org.mockito.Mockito;
 
 /**
- * Test all the default implementations of the BloomFilter in {@link AbstractBloomFilter}.
+ * Test all the default implementations of the BloomFilter in
+ * {@link AbstractBloomFilter}.
  */
 public class DefaultBloomFilterMethodsTest extends AbstractBloomFilterTest {
 
-    /**
-     * A testing class that implements only the abstract methods from BloomFilter.
-     *
-     */
-    private static class BF extends AbstractBloomFilter {
+	public static AbstractBloomFilter mockAbstractBloomFilter1(final Shape shape) {
+		BitSet mockFieldVariableBitSet;
+		AbstractBloomFilter mockInstance = mock(AbstractBloomFilter.class,
+				withSettings().useConstructor(shape).defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		mockFieldVariableBitSet = new BitSet();
+		doAnswer((stubInvo) -> {
+			return mockFieldVariableBitSet.toLongArray();
+		}).when(mockInstance).getBits();
+		doAnswer((stubInvo) -> {
+			Hasher hasher = stubInvo.getArgument(0);
+			mockInstance.verifyHasher(hasher);
+			hasher.iterator(mockInstance.getShape()).forEachRemaining((IntConsumer) mockFieldVariableBitSet::set);
+			return true;
+		}).when(mockInstance).merge(any(Hasher.class));
+		doAnswer((stubInvo) -> {
+			BloomFilter other = stubInvo.getArgument(0);
+			mockInstance.verifyShape(other);
+			mockFieldVariableBitSet.or(BitSet.valueOf(other.getBits()));
+			return true;
+		}).when(mockInstance).merge(any(BloomFilter.class));
+		doAnswer((stubInvo) -> {
+			return new StaticHasher(mockFieldVariableBitSet.stream().iterator(), mockInstance.getShape());
+		}).when(mockInstance).getHasher();
+		return mockInstance;
+	}
 
-        /**
-         * The bits for this BloomFilter.
-         */
-        private final BitSet bitSet;
+	public static AbstractBloomFilter mockAbstractBloomFilter2(final Hasher hasher, final Shape shape) {
+		BitSet mockFieldVariableBitSet;
+		AbstractBloomFilter mockInstance = mock(AbstractBloomFilter.class,
+				withSettings().useConstructor(shape).defaultAnswer(Mockito.CALLS_REAL_METHODS));
+		mockFieldVariableBitSet = new BitSet();
+		mockInstance.verifyHasher(hasher);
+		hasher.iterator(shape).forEachRemaining((IntConsumer) mockFieldVariableBitSet::set);
+		doAnswer((stubInvo) -> {
+			return mockFieldVariableBitSet.toLongArray();
+		}).when(mockInstance).getBits();
+		doAnswer((stubInvo) -> {
+			Hasher hasherMockVariable = stubInvo.getArgument(0);
+			mockInstance.verifyHasher(hasherMockVariable);
+			hasherMockVariable.iterator(mockInstance.getShape())
+					.forEachRemaining((IntConsumer) mockFieldVariableBitSet::set);
+			return true;
+		}).when(mockInstance).merge(any(Hasher.class));
+		doAnswer((stubInvo) -> {
+			BloomFilter other = stubInvo.getArgument(0);
+			mockInstance.verifyShape(other);
+			mockFieldVariableBitSet.or(BitSet.valueOf(other.getBits()));
+			return true;
+		}).when(mockInstance).merge(any(BloomFilter.class));
+		doAnswer((stubInvo) -> {
+			return new StaticHasher(mockFieldVariableBitSet.stream().iterator(), mockInstance.getShape());
+		}).when(mockInstance).getHasher();
+		return mockInstance;
+	}
 
-        /**
-         * Constructs a BitSetBloomFilter from a hasher and a shape.
-         *
-         * @param hasher the Hasher to use.
-         * @param shape the desired shape of the filter.
-         */
-        BF(final Hasher hasher, final Shape shape) {
-            this(shape);
-            verifyHasher(hasher);
-            hasher.iterator(shape).forEachRemaining((IntConsumer) bitSet::set);
-        }
+	@Override
+	protected AbstractBloomFilter createEmptyFilter(final Shape shape) {
+		return DefaultBloomFilterMethodsTest.mockAbstractBloomFilter1(shape);
+	}
 
-        /**
-         * Constructs an empty BitSetBloomFilter.
-         *
-         * @param shape the desired shape of the filter.
-         */
-        BF(final Shape shape) {
-            super(shape);
-            this.bitSet = new BitSet();
-        }
-
-        @Override
-        public long[] getBits() {
-            return bitSet.toLongArray();
-        }
-
-        @Override
-        public StaticHasher getHasher() {
-            return new StaticHasher(bitSet.stream().iterator(), getShape());
-        }
-
-        @Override
-        public boolean merge(final BloomFilter other) {
-            verifyShape(other);
-            bitSet.or(BitSet.valueOf(other.getBits()));
-            return true;
-        }
-
-        @Override
-        public boolean merge(final Hasher hasher) {
-            verifyHasher(hasher);
-            hasher.iterator(getShape()).forEachRemaining((IntConsumer) bitSet::set);
-            return true;
-        }
-    }
-
-    @Override
-    protected AbstractBloomFilter createEmptyFilter(final Shape shape) {
-        return new BF(shape);
-    }
-
-    @Override
-    protected AbstractBloomFilter createFilter(final Hasher hasher, final Shape shape) {
-        return new BF(hasher, shape);
-    }
+	@Override
+	protected AbstractBloomFilter createFilter(final Hasher hasher, final Shape shape) {
+		return DefaultBloomFilterMethodsTest.mockAbstractBloomFilter2(hasher, shape);
+	}
 }
